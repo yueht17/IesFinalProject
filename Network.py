@@ -6,7 +6,6 @@ Description: Define the network
 """
 import networkx as nx
 from Arcs import arcs
-from matplotlib import pyplot as plt
 from random import random
 from math import exp
 
@@ -43,6 +42,7 @@ class Network():
         return maximum_flow == self.__demand
 
     def draw(self):
+        from matplotlib import pyplot as plt
         nx.draw(self.__G, with_labels=True)
         plt.show()
 
