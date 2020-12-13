@@ -89,7 +89,8 @@ class Network():
             import multiprocessing as mp
             num_cores = int(mp.cpu_count())
             pool = mp.Pool(num_cores)
-            results = [pool.apply_async(self._monte_carlo, args=(self.Monte_Carlo_Times // num_cores, interval))
+            results = [pool.apply_async(self._monte_carlo,
+                                        args=(self.Monte_Carlo_Times // num_cores, interval, True))
                        for _ in range(num_cores)]
             results = [p.get() for p in results]
             pool.close()
@@ -99,7 +100,16 @@ class Network():
         if not parallel:
             return self._monte_carlo(times=self.Monte_Carlo_Times, interval=interval, is_success_times=False)
         else:
-            raise NotImplemented
+            import multiprocessing as mp
+            num_cores = int(mp.cpu_count())
+            pool = mp.Pool(num_cores)
+            results = [pool.apply_async(self._monte_carlo,
+                                        args=(self.Monte_Carlo_Times // num_cores, interval, False))
+                       for _ in range(num_cores)]
+            output = []
+            results = [output.extend(p.get()) for p in results]
+            pool.close()
+            return output
 
     def maintenance_cost(self, interval=1.0):
         res = 0
@@ -109,7 +119,7 @@ class Network():
 
     def output(self, parallel=False, interval=1.0):
         from numpy import var, mean
-        outflows = self.get_outflows(interval=interval, parallel=False)
+        outflows = self.get_outflows(interval=interval, parallel=parallel)
         res = {
             "interval": interval,
             "isParallel": parallel,
