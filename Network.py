@@ -57,12 +57,26 @@ class Network():
         # print(prob_list)
         return res
 
-    def reliability(self, interval=1.0):
+    def _monte_carlo(self, times=1000, interval=1.0):
+        assert times <= self.Monte_Carlo_Times
         success_times = 0
-        for index in range(self.Monte_Carlo_Times):
+        for index in range(times):
             broken_arcs = self.__get_broken_arcs(interval)
             success_times = success_times + 1 if self.is_satisfy_demand(broken_arcs) else success_times
-        return success_times / self.Monte_Carlo_Times
+        return success_times
+
+    def reliability(self, interval=1.0, parallel=True):
+        if not parallel:
+            return self._monte_carlo(times=self.Monte_Carlo_Times, interval=interval) / self.Monte_Carlo_Times
+        else:
+            import multiprocessing as mp
+            num_cores = int(mp.cpu_count())
+            pool = mp.Pool(num_cores)
+            results = [pool.apply_async(self._monte_carlo, args=(self.Monte_Carlo_Times // num_cores, interval))
+                       for _ in range(num_cores)]
+            results = [p.get() for p in results]
+            pool.close()
+            return sum(results) / self.Monte_Carlo_Times
 
     def maintenance_cost(self, interval=1.0):
         res = 0
