@@ -27,6 +27,16 @@ class Network():
         flow_value, flow_dict = nx.maximum_flow(self.__G, "s", "d")
         return flow_value
 
+    def get_max_flow(self, broken_arcs=None):
+        for break_arc in broken_arcs:
+            assert break_arc in self.__maintainableArc
+            self.__G[arcs[break_arc]["from"]][arcs[break_arc]["to"]]["capacity"] = 0
+        res = self.__get_max_flow()
+        for break_arc in broken_arcs:
+            assert break_arc in self.__maintainableArc
+            self.__G[arcs[break_arc]["from"]][arcs[break_arc]["to"]]["capacity"] = arcs[break_arc]["capacity"]
+        return res
+
     def __is_satisfy_demand(self):
         maximum_flow = self.__get_max_flow()
         assert maximum_flow <= self.__demand
@@ -57,15 +67,22 @@ class Network():
         # print(prob_list)
         return res
 
-    def _monte_carlo(self, times=1000, interval=1.0):
+    def _monte_carlo(self, times=1000, interval=1.0, is_success_times=True):
         assert times <= self.Monte_Carlo_Times
-        success_times = 0
-        for index in range(times):
-            broken_arcs = self.__get_broken_arcs(interval)
-            success_times = success_times + 1 if self.is_satisfy_demand(broken_arcs) else success_times
-        return success_times
+        if is_success_times:
+            success_times = 0
+            for index in range(times):
+                broken_arcs = self.__get_broken_arcs(interval)
+                success_times = success_times + 1 if self.is_satisfy_demand(broken_arcs) else success_times
+            return success_times
+        else:
+            max_flow_list = [0] * times
+            for index in range(times):
+                broken_arcs = self.__get_broken_arcs(interval)
+                max_flow_list[index] = self.get_max_flow(broken_arcs)
+            return max_flow_list
 
-    def reliability(self, interval=1.0, parallel=True):
+    def get_reliability(self, interval=1.0, parallel=True):
         if not parallel:
             return self._monte_carlo(times=self.Monte_Carlo_Times, interval=interval) / self.Monte_Carlo_Times
         else:
@@ -78,8 +95,29 @@ class Network():
             pool.close()
             return sum(results) / self.Monte_Carlo_Times
 
+    def get_outflows(self, interval=1.0, parallel=False):
+        if not parallel:
+            return self._monte_carlo(times=self.Monte_Carlo_Times, interval=interval, is_success_times=False)
+        else:
+            raise NotImplemented
+
     def maintenance_cost(self, interval=1.0):
         res = 0
         for arc in self.__maintainableArc:
             res += (1 - 0.5 * exp(-1 * arcs[arc]["fail_rate"] * interval)) * arcs[arc]["maintain_cost"]
         return res * self.__totalTimeHorizon / interval
+
+    def output(self, parallel=False, interval=1.0):
+        from numpy import var, mean
+        outflows = self.get_outflows(interval=interval, parallel=False)
+        res = {
+            "interval": interval,
+            "isParallel": parallel,
+            "Monte_Carlo_Times": self.Monte_Carlo_Times,
+            "maintain_cost": self.maintenance_cost(interval=interval),
+            "reliability": sum(_ >= self.__demand for _ in outflows) / outflows.__len__(),
+            "time_spend": 0,
+            "maximum_flow_mean": mean(outflows),
+            "maximum_flow_variance": var(outflows),
+        }
+        return res
