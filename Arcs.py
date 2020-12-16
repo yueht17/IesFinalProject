@@ -189,6 +189,20 @@ arcs = {
         "fail_rate": 0.0,
         "maintain_cost": 0
     },
+    "arc_s4": {
+        "from": "s",
+        "to": "2",
+        "capacity": INF,
+        "fail_rate": 0.0,
+        "maintain_cost": 0
+    },
+    "arc_s5": {
+        "from": "s",
+        "to": "4",
+        "capacity": INF,
+        "fail_rate": 0.0,
+        "maintain_cost": 0
+    },
     "arc_d1": {
         "from": "16",
         "to": "d",
