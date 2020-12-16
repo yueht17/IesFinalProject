@@ -8,6 +8,7 @@ import networkx as nx
 from Arcs import arcs
 from random import random
 from math import exp
+from tqdm import tqdm
 
 
 class Network():
@@ -71,13 +72,13 @@ class Network():
         assert times <= self.Monte_Carlo_Times
         if is_success_times:
             success_times = 0
-            for index in range(times):
+            for index in tqdm(range(times), desc='Simulating for interval=' + str(interval * 365) + " days"):
                 broken_arcs = self.__get_broken_arcs(interval)
                 success_times = success_times + 1 if self.is_satisfy_demand(broken_arcs) else success_times
             return success_times
         else:
             max_flow_list = [0] * times
-            for index in range(times):
+            for index in tqdm(range(times), desc='Simulating for interval=' + str(interval * 365) + " days"):
                 broken_arcs = self.__get_broken_arcs(interval)
                 max_flow_list[index] = self.get_max_flow(broken_arcs)
             return max_flow_list
