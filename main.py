@@ -9,7 +9,7 @@ if __name__ == "__main__":
     net = Network()
     saver = Saver()
     net.Monte_Carlo_Times = 30000
-    intervals = [_ / 365 for _ in range(1, 180)]
+    intervals = [_ / 365 for _ in range(1, 400)]
     for interval in intervals:
         saver.info_log("Starting simulation, interval" + str(interval))
         begin = time()
